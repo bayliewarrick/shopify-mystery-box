@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Page, Card, Text, Button, DataTable, Badge, Spinner, EmptyState, ButtonGroup, Toast } from '@shopify/polaris';
+import { Page, Card, Text, Button, DataTable, Badge, Spinner, EmptyState, Toast } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../contexts/ApiContext';
 import { MysteryBox } from '../services/api';

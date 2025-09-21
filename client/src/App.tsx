@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AppProvider } from '@shopify/polaris';
 import { PolarisProvider } from './components/PolarisProvider';
 import { ApiProvider } from './contexts/ApiContext';
 import AppLayout from './components/AppLayout';
