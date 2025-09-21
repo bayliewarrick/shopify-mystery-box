@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Shop {
+  id          Int      @id @default(autoincrement())
+  shopDomain  String   @unique
+  accessToken String
+  shopName    String?
+  email       String?
+  currency    String?
+  timezone    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  mysteryBoxes MysteryBox[]
+  products     ProductCache[]
+  
+  @@map("shops")
+}
+
+model MysteryBox {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  
+  // Value parameters
+  minValue    Float
+  maxValue    Float
+  
+  // Item quantity settings
+  minItems    Int      @default(1)
+  maxItems    Int
+  
+  // Product filtering
+  includeTags String // JSON string of tags to include
+  excludeTags String // JSON string of tags to exclude
+  includeProductTypes String // JSON string of product types to include
+  excludeProductTypes String // JSON string of product types to exclude
+  
+  // Status and settings
+  isActive    Boolean  @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  shopId      Int
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  instances   BoxInstance[]
+  
+  @@map("mystery_boxes")
+}
+
+model BoxInstance {
+  id          Int      @id @default(autoincrement())
+  
+  // Generated box details
+  totalValue  Float
+  itemCount   Int
+  
+  // Product selection
+  products    String   // JSON string of selected products
+  
+  // Timestamps
+  generatedAt DateTime @default(now())
+  
+  // Relations
+  mysteryBoxId Int
+  mysteryBox   MysteryBox @relation(fields: [mysteryBoxId], references: [id], onDelete: Cascade)
+  
+  @@map("box_instances")
+}
+
+model ProductCache {
+  id          Int      @id @default(autoincrement())
+  shopId      Int
+  
+  // Shopify product data
+  shopifyProductId String   // Shopify product ID
+  title       String
+  description String   @default("")
+  vendor      String   @default("")
+  productType String   @default("")
+  tags        String   @default("[]") // JSON string of tags
+  status      String   @default("active")
+  price       Float
+  compareAtPrice Float  @default(0)
+  inventoryQuantity Int @default(0)
+  
+  // JSON fields for complex data
+  variants    String   @default("[]") // JSON string of variants
+  images      String   @default("[]") // JSON string of images
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  @@unique([shopId, shopifyProductId])
+  @@map("product_cache")
+}

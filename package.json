@@ -1,0 +1,49 @@
+{
+  "name": "shopify-mystery-box",
+  "version": "1.0.0",
+  "description": "Shopify Mystery Box App for Pack Peddlers",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "server": "node server/index.js",
+    "client": "cd client && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "cd client && npm run build && npm run db:generate",
+    "build:client": "cd client && npm run build",
+    "build:server": "npm run db:generate",
+    "postinstall": "npm run db:generate",
+    "deploy": "npm run build && npm start",
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate deploy",
+    "db:studio": "npx prisma studio"
+  },
+  "keywords": [
+    "shopify",
+    "mystery-box",
+    "ecommerce",
+    "inventory",
+    "bundling"
+  ],
+  "author": "Pack Peddlers",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.7.1",
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2",
+    "prisma": "^5.7.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
