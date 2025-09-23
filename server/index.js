@@ -174,17 +174,108 @@ app.post('/setup-database', async (req, res) => {
   try {
     console.log('🔧 Manual database setup triggered...');
     
-    const { execSync } = require('child_process');
+    // Create tables using raw SQL
+    const createTables = `
+      -- Create shops table
+      CREATE TABLE IF NOT EXISTS shops (
+        id SERIAL PRIMARY KEY,
+        "shopDomain" TEXT UNIQUE NOT NULL,
+        "accessToken" TEXT NOT NULL,
+        "shopName" TEXT,
+        email TEXT,
+        currency TEXT,
+        timezone TEXT,
+        "isActive" BOOLEAN DEFAULT true NOT NULL,
+        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+
+      -- Create mystery_boxes table
+      CREATE TABLE IF NOT EXISTS mystery_boxes (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        "minValue" DOUBLE PRECISION NOT NULL,
+        "maxValue" DOUBLE PRECISION NOT NULL,
+        "minItems" INTEGER DEFAULT 1 NOT NULL,
+        "maxItems" INTEGER NOT NULL,
+        "includeTags" TEXT NOT NULL,
+        "excludeTags" TEXT NOT NULL,
+        "includeProductTypes" TEXT NOT NULL,
+        "excludeProductTypes" TEXT NOT NULL,
+        "isActive" BOOLEAN DEFAULT true NOT NULL,
+        "isAutomatic" BOOLEAN DEFAULT false NOT NULL,
+        "shopId" INTEGER NOT NULL,
+        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY ("shopId") REFERENCES shops(id) ON DELETE CASCADE
+      );
+
+      -- Create box_instances table
+      CREATE TABLE IF NOT EXISTS box_instances (
+        id SERIAL PRIMARY KEY,
+        "mysteryBoxId" INTEGER NOT NULL,
+        "totalValue" DOUBLE PRECISION NOT NULL,
+        "itemCount" INTEGER NOT NULL,
+        "selectedProducts" TEXT NOT NULL,
+        status TEXT DEFAULT 'DRAFT' NOT NULL,
+        "generatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "publishedAt" TIMESTAMP(3),
+        "soldAt" TIMESTAMP(3),
+        "shopifyProductId" TEXT,
+        "shopifyVariantId" TEXT,
+        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY ("mysteryBoxId") REFERENCES mystery_boxes(id) ON DELETE CASCADE
+      );
+
+      -- Create product_cache table
+      CREATE TABLE IF NOT EXISTS product_cache (
+        id SERIAL PRIMARY KEY,
+        "shopId" INTEGER NOT NULL,
+        "shopifyProductId" TEXT NOT NULL,
+        title TEXT NOT NULL,
+        handle TEXT NOT NULL,
+        description TEXT,
+        vendor TEXT,
+        "productType" TEXT,
+        tags TEXT NOT NULL,
+        price DOUBLE PRECISION NOT NULL,
+        "compareAtPrice" DOUBLE PRECISION,
+        "costPerItem" DOUBLE PRECISION,
+        inventory INTEGER DEFAULT 0 NOT NULL,
+        available BOOLEAN DEFAULT true NOT NULL,
+        "imageUrl" TEXT,
+        "isActive" BOOLEAN DEFAULT true NOT NULL,
+        "lastSynced" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY ("shopId") REFERENCES shops(id) ON DELETE CASCADE,
+        UNIQUE("shopId", "shopifyProductId")
+      );
+    `;
     
-    // Run db push to create tables
-    execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+    await prisma.$executeRawUnsafe(createTables);
     
-    // Test the connection
-    await prisma.shop.findFirst();
+    // Test the connection by creating a demo shop
+    const demoShop = await prisma.shop.upsert({
+      where: { shopDomain: 'pack-peddlers-demo.myshopify.com' },
+      update: {},
+      create: {
+        shopDomain: 'pack-peddlers-demo.myshopify.com',
+        accessToken: 'demo-token',
+        shopName: 'Pack Peddlers Demo Store',
+        email: 'demo@packpeddlers.com',
+        currency: 'USD',
+        timezone: 'America/New_York',
+        isActive: true
+      }
+    });
     
     res.json({ 
       success: true, 
       message: 'Database setup completed successfully',
+      demoShop: demoShop,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
