@@ -159,7 +159,7 @@ class LiveShopifyService {
           const productData = {
             shopId: shopRecord.id,
             shopifyProductId: product.id.toString(),
-            title: product.title,
+            title: product.title || 'Untitled Product',
             description: product.body_html || '',
             vendor: product.vendor || '',
             productType: product.product_type || '',
@@ -183,6 +183,20 @@ class LiveShopifyService {
             })) || []),
             status: product.status || 'active'
           };
+
+          // Validate required fields
+          if (!productData.shopId) {
+            throw new Error('Missing required field: shopId');
+          }
+          if (!productData.shopifyProductId) {
+            throw new Error('Missing required field: shopifyProductId');  
+          }
+          if (!productData.title) {
+            throw new Error('Missing required field: title');
+          }
+          if (isNaN(productData.price)) {
+            throw new Error('Invalid price value');
+          }
 
           console.log(`   💾 Saving product data for ${product.title}`);
           console.log(`   📊 Product data:`, JSON.stringify(productData, null, 2));
@@ -208,7 +222,21 @@ class LiveShopifyService {
           }
         } catch (error) {
           console.error(`❌ Error syncing product ${product.id} (${product.title}):`, error.message);
-          console.error(`❌ Error details:`, error);
+          console.error(`❌ Error details:`, {
+            message: error.message,
+            code: error.code,
+            meta: error.meta,
+            cause: error.cause,
+            prismaStack: error.stack
+          });
+          console.error(`❌ Product data that failed:`, {
+            shopId: shopRecord.id,
+            shopifyProductId: product.id.toString(),
+            title: product.title,
+            price: parseFloat(primaryVariant?.price || 0),
+            hasVariants: !!product.variants,
+            variantCount: product.variants?.length || 0
+          });
           errorCount++;
         }
       }
