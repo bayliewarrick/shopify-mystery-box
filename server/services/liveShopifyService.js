@@ -114,8 +114,8 @@ class LiveShopifyService {
 
   // Sync products to local database
   async syncProducts() {
-    const uniqueId = Date.now();
-    console.log(`🚀 Starting syncProducts() - Deployment ID: ${uniqueId}`);
+    const deploymentTimestamp = new Date().toISOString();
+    console.log(`🚀 Starting syncProducts() - Deployment: ${deploymentTimestamp}`);
     
     try {
       console.log(`🔄 Starting product sync for shop: ${this.shop}`);
@@ -247,10 +247,22 @@ class LiveShopifyService {
           });
           detailedErrors.push(errorDetails);
           errorCount++;
+          
+          // Return immediately after first error for debugging
+          console.log(`🛑 STOPPING after first error for debugging`);
+          return {
+            success: false,
+            syncedCount,
+            errorCount,
+            totalProducts: shopifyProducts.length,
+            processedProducts: 1,
+            firstError: errorDetails,
+            deploymentTimestamp
+          };
         }
       }
 
-      console.log(`✅ Sync completed: ${syncedCount} products synced, ${errorCount} errors`);
+      console.log(`✅ Sync completed: ${syncedCount} products synced, ${errorCount} errors out of ${productsToProcess.length} processed`);
       
       return {
         success: true,
