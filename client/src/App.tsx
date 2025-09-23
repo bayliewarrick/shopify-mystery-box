@@ -8,6 +8,7 @@ import MysteryBoxList from './pages/MysteryBoxList';
 import MysteryBoxForm from './pages/MysteryBoxForm';
 import MysteryBoxDetail from './pages/MysteryBoxDetail';
 import Inventory from './pages/Inventory';
+import ShopifySetup from './pages/ShopifySetup';
 import '@shopify/polaris/build/esm/styles.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
               <Route path="/mystery-boxes/:id" element={<MysteryBoxDetail />} />
               <Route path="/mystery-boxes/:id/edit" element={<MysteryBoxForm />} />
               <Route path="/inventory" element={<Inventory />} />
+              <Route path="/shopify-setup" element={<ShopifySetup />} />
             </Routes>
           </AppLayout>
         </Router>

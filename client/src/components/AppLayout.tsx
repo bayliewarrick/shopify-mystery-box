@@ -49,6 +49,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
         title="Settings"
         items={[
           {
+            url: '/shopify-setup',
+            label: 'Shopify Setup',
+            selected: location.pathname === '/shopify-setup',
+            onClick: () => navigate('/shopify-setup')
+          },
+          {
             url: '/settings',
             label: 'App Settings',
             selected: location.pathname === '/settings',
