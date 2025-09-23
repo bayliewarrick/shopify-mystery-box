@@ -6,8 +6,15 @@ export default function ShopifySetup() {
   const [loading, setLoading] = useState(false);
 
   const handleConnect = () => {
-    if (!shop) return;
+    console.log('🚀 Connect button clicked!');
+    console.log('📝 Shop value:', shop);
+    
+    if (!shop) {
+      console.log('❌ No shop entered, returning early');
+      return;
+    }
 
+    console.log('⏳ Setting loading state...');
     setLoading(true);
     
     // Clean shop domain - remove protocol, www, and extract just the shop name
@@ -29,9 +36,11 @@ export default function ShopifySetup() {
     }
 
     // Use current domain for API calls
-    const apiBaseUrl = process.env.NODE_ENV === 'production' 
-      ? window.location.origin 
-      : 'http://localhost:3000';
+    const apiBaseUrl = window.location.origin;
+
+    console.log('🔗 Connecting to shop:', cleanShop);
+    console.log('🌐 Using API base URL:', apiBaseUrl);
+    console.log('🎯 Full redirect URL:', `${apiBaseUrl}/api/auth/install?shop=${cleanShop}`);
 
     // Redirect to OAuth installation
     window.location.href = `${apiBaseUrl}/api/auth/install?shop=${cleanShop}`;
