@@ -185,20 +185,27 @@ class LiveShopifyService {
           };
 
           console.log(`   💾 Saving product data for ${product.title}`);
+          console.log(`   📊 Product data:`, JSON.stringify(productData, null, 2));
           
-          await prisma.productCache.upsert({
-            where: {
-              shopId_shopifyProductId: {
-                shopId: shopRecord.id,
-                shopifyProductId: product.id.toString()
-              }
-            },
-            update: productData,
-            create: productData
-          });
+          try {
+            await prisma.productCache.upsert({
+              where: {
+                shopId_shopifyProductId: {
+                  shopId: shopRecord.id,
+                  shopifyProductId: product.id.toString()
+                }
+              },
+              update: productData,
+              create: productData
+            });
 
-          console.log(`   ✅ Successfully saved product ${product.id} (${product.title})`);
-          syncedCount++;
+            console.log(`   ✅ Successfully saved product ${product.id} (${product.title})`);
+            syncedCount++;
+          } catch (dbError) {
+            console.error(`   ❌ Database error for product ${product.id}:`, dbError.message);
+            console.error(`   ❌ Full database error:`, dbError);
+            throw dbError; // Re-throw to be caught by outer try-catch
+          }
         } catch (error) {
           console.error(`❌ Error syncing product ${product.id} (${product.title}):`, error.message);
           console.error(`❌ Error details:`, error);
