@@ -150,6 +150,12 @@ class LiveShopifyService {
             continue;
           }
 
+          // Check if product has variants
+          if (!product.variants || product.variants.length === 0) {
+            console.log(`⚠️  Skipping product ${product.id} (${product.title}): No variants`);
+            continue;
+          }
+
           // Get primary variant for price (usually the first one)
           const primaryVariant = product.variants[0];
           
