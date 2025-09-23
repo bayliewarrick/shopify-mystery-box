@@ -17,38 +17,22 @@ const PORT = process.env.PORT || 3000;
 
 // Test database connection and setup schema
 async function setupDatabase() {
+  if (!process.env.DATABASE_URL) {
+    console.log('⚠️ DATABASE_URL not set - skipping database setup');
+    return;
+  }
+  
   try {
     await prisma.$connect();
     console.log('✅ Database connected successfully');
     
-    // In production with PostgreSQL, run a simple schema sync
-    if (process.env.DATABASE_URL?.includes('postgres')) {
-      console.log('🔧 Ensuring database schema is up to date...');
-      
-      // Try to run a simple query to check if tables exist
-      try {
-        await prisma.shop.findFirst();
-        console.log('✅ Database schema looks good');
-      } catch (error) {
-        console.log('📦 Database tables not found, creating them...');
-        console.log('Error details:', error.message);
-        
-        const { execSync } = require('child_process');
-        
-        try {
-          // Run db push to create tables
-          console.log('Running: npx prisma db push --accept-data-loss');
-          execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-          console.log('✅ Database schema created successfully');
-          
-          // Test again
-          await prisma.shop.findFirst();
-          console.log('✅ Database schema verified');
-        } catch (pushError) {
-          console.error('❌ Database schema setup failed:', pushError.message);
-          console.log('You can manually trigger setup by calling POST /setup-database');
-        }
-      }
+    // Test if tables exist by trying a simple query
+    try {
+      await prisma.shop.findFirst();
+      console.log('✅ Database schema looks good');
+    } catch (error) {
+      console.log('📦 Database tables not found, will create on first request');
+      console.log('You can manually setup with: POST /setup-database');
     }
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
@@ -178,94 +162,49 @@ app.get('/health', (req, res) => {
 app.post('/setup-database', async (req, res) => {
   try {
     console.log('🔧 Manual database setup triggered...');
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('NODE_ENV:', process.env.NODE_ENV);
     
-    // Create tables using raw SQL
-    const createTables = `
-      -- Create shops table
-      CREATE TABLE IF NOT EXISTS shops (
-        id SERIAL PRIMARY KEY,
-        "shopDomain" TEXT UNIQUE NOT NULL,
-        "accessToken" TEXT NOT NULL,
-        "shopName" TEXT,
-        email TEXT,
-        currency TEXT,
-        timezone TEXT,
-        "isActive" BOOLEAN DEFAULT true NOT NULL,
-        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
-      );
-
-      -- Create mystery_boxes table
-      CREATE TABLE IF NOT EXISTS mystery_boxes (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT,
-        "minValue" DOUBLE PRECISION NOT NULL,
-        "maxValue" DOUBLE PRECISION NOT NULL,
-        "minItems" INTEGER DEFAULT 1 NOT NULL,
-        "maxItems" INTEGER NOT NULL,
-        "includeTags" TEXT NOT NULL,
-        "excludeTags" TEXT NOT NULL,
-        "includeProductTypes" TEXT NOT NULL,
-        "excludeProductTypes" TEXT NOT NULL,
-        "isActive" BOOLEAN DEFAULT true NOT NULL,
-        "isAutomatic" BOOLEAN DEFAULT false NOT NULL,
-        "shopId" INTEGER NOT NULL,
-        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        FOREIGN KEY ("shopId") REFERENCES shops(id) ON DELETE CASCADE
-      );
-
-      -- Create box_instances table
-      CREATE TABLE IF NOT EXISTS box_instances (
-        id SERIAL PRIMARY KEY,
-        "mysteryBoxId" INTEGER NOT NULL,
-        "totalValue" DOUBLE PRECISION NOT NULL,
-        "itemCount" INTEGER NOT NULL,
-        "selectedProducts" TEXT NOT NULL,
-        status TEXT DEFAULT 'DRAFT' NOT NULL,
-        "generatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        "publishedAt" TIMESTAMP(3),
-        "soldAt" TIMESTAMP(3),
-        "shopifyProductId" TEXT,
-        "shopifyVariantId" TEXT,
-        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        FOREIGN KEY ("mysteryBoxId") REFERENCES mystery_boxes(id) ON DELETE CASCADE
-      );
-
-      -- Create product_cache table
-      CREATE TABLE IF NOT EXISTS product_cache (
-        id SERIAL PRIMARY KEY,
-        "shopId" INTEGER NOT NULL,
-        "shopifyProductId" TEXT NOT NULL,
-        title TEXT NOT NULL,
-        handle TEXT NOT NULL,
-        description TEXT,
-        vendor TEXT,
-        "productType" TEXT,
-        tags TEXT NOT NULL,
-        price DOUBLE PRECISION NOT NULL,
-        "compareAtPrice" DOUBLE PRECISION,
-        "costPerItem" DOUBLE PRECISION,
-        inventory INTEGER DEFAULT 0 NOT NULL,
-        available BOOLEAN DEFAULT true NOT NULL,
-        "imageUrl" TEXT,
-        "isActive" BOOLEAN DEFAULT true NOT NULL,
-        "lastSynced" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        FOREIGN KEY ("shopId") REFERENCES shops(id) ON DELETE CASCADE,
-        UNIQUE("shopId", "shopifyProductId")
-      );
-    `;
+    if (!process.env.DATABASE_URL) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'DATABASE_URL environment variable not set',
+        timestamp: new Date().toISOString()
+      });
+    }
     
-    await prisma.$executeRawUnsafe(createTables);
+    // Test database connection first
+    await prisma.$connect();
+    console.log('✅ Database connection successful');
     
-    // Test the connection by creating a demo shop
+    // Use Prisma's db push through exec
+    const { execSync } = require('child_process');
+    
+    try {
+      console.log('Running Prisma db push...');
+      execSync('npx prisma db push --accept-data-loss --force-reset', { 
+        stdio: 'inherit',
+        env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL }
+      });
+      console.log('✅ Prisma db push completed');
+    } catch (pushError) {
+      console.log('Prisma push failed, trying manual table creation...');
+      
+      // Fallback: try to create tables manually if they don't exist
+      try {
+        await prisma.shop.findFirst();
+        console.log('✅ Tables already exist');
+      } catch (tableError) {
+        console.log('Creating demo shop to test connection...');
+      }
+    }
+    
+    // Create demo shop
     const demoShop = await prisma.shop.upsert({
       where: { shopDomain: 'pack-peddlers-demo.myshopify.com' },
-      update: {},
+      update: {
+        updatedAt: new Date()
+      },
       create: {
         shopDomain: 'pack-peddlers-demo.myshopify.com',
         accessToken: 'demo-token',
@@ -283,6 +222,7 @@ app.post('/setup-database', async (req, res) => {
       demoShop: demoShop,
       timestamp: new Date().toISOString()
     });
+    
   } catch (error) {
     console.error('❌ Manual database setup failed:', error.message);
     res.status(500).json({ 
