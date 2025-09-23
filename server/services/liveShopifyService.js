@@ -69,19 +69,26 @@ class LiveShopifyService {
     let hasNextPage = true;
     let pageInfo = null;
 
+    console.log(`🔍 Fetching products from Shopify store: ${this.shop}`);
+
     while (hasNextPage) {
       try {
         const params = {
-          limit: 250,
-          status: 'active'
+          limit: 250
+          // Remove status filter to get ALL products (active, draft, archived)
         };
 
         if (pageInfo) {
           params.page_info = pageInfo;
         }
 
+        console.log(`📡 Making API request to /products.json with params:`, params);
         const response = await this.makeRequest('GET', '/products.json', null, params);
-        allProducts = allProducts.concat(response.products);
+        
+        console.log(`📦 Received ${response.products?.length || 0} products in this batch`);
+        console.log(`🔍 Sample product titles:`, response.products?.slice(0, 3).map(p => p.title) || []);
+        
+        allProducts = allProducts.concat(response.products || []);
 
         // Check for pagination
         const linkHeader = response.headers?.link;
@@ -92,14 +99,16 @@ class LiveShopifyService {
           const nextMatch = linkHeader.match(/<[^>]*[?&]page_info=([^&>]+)/);
           pageInfo = nextMatch ? nextMatch[1] : null;
           hasNextPage = !!pageInfo;
+          console.log(`➡️ Has next page, page_info: ${pageInfo}`);
         }
 
       } catch (error) {
-        console.error('Error in pagination:', error);
+        console.error('❌ Error in pagination:', error.response?.data || error.message);
         break;
       }
     }
 
+    console.log(`✅ Total products fetched: ${allProducts.length}`);
     return allProducts;
   }
 
@@ -265,10 +274,20 @@ class LiveShopifyService {
         config.params = params;
       }
 
+      console.log(`🚀 Making Shopify API request: ${method} ${this.baseURL}${endpoint}`);
+      console.log(`🔑 Using access token: ${this.accessToken?.substring(0, 10)}...`);
+      
       const response = await axios(config);
+      
+      console.log(`✅ Shopify API response status: ${response.status}`);
+      console.log(`📊 Response data keys:`, Object.keys(response.data || {}));
+      
       return response.data;
     } catch (error) {
-      console.error(`Shopify API Error (${method} ${endpoint}):`, error.response?.data || error.message);
+      console.error(`❌ Shopify API Error (${method} ${endpoint}):`);
+      console.error(`Status: ${error.response?.status}`);
+      console.error(`Error data:`, error.response?.data);
+      console.error(`Error message:`, error.message);
       throw error;
     }
   }

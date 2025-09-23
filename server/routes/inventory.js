@@ -431,4 +431,55 @@ router.post('/products/:productId/refresh', async (req, res) => {
   }
 });
 
+// Test Shopify API connection
+router.get('/test-connection', async (req, res) => {
+  try {
+    const { shop } = req.query;
+
+    if (!shop) {
+      return res.status(400).json({ error: 'Shop parameter is required' });
+    }
+
+    // Find the shop and get access token
+    const shopData = await prisma.shop.findUnique({
+      where: { shopDomain: shop }
+    });
+
+    if (!shopData) {
+      return res.status(404).json({ error: 'Shop not found' });
+    }
+
+    console.log(`🧪 Testing Shopify API connection for shop: ${shop}`);
+    
+    // Test with LiveShopifyService
+    const liveService = new LiveShopifyService(shop, shopData.accessToken);
+    
+    // Try to fetch shop info first
+    const shopInfo = await liveService.makeRequest('GET', '/shop.json');
+    console.log(`🏪 Shop info retrieved:`, shopInfo.shop?.name);
+    
+    // Try to fetch just first few products
+    const productsResponse = await liveService.makeRequest('GET', '/products.json', null, { limit: 5 });
+    console.log(`📦 Products test - found ${productsResponse.products?.length || 0} products`);
+
+    res.json({
+      message: 'Shopify API connection successful',
+      shop: shopInfo.shop?.name,
+      productCount: productsResponse.products?.length || 0,
+      sampleProducts: productsResponse.products?.map(p => ({ 
+        id: p.id, 
+        title: p.title, 
+        status: p.status 
+      })) || []
+    });
+
+  } catch (error) {
+    console.error('❌ Error testing Shopify connection:', error);
+    res.status(500).json({ 
+      error: 'Failed to connect to Shopify API',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
 module.exports = router;
