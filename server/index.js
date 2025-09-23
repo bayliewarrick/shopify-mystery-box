@@ -22,7 +22,7 @@ async function setupDatabase() {
     console.log('✅ Database connected successfully');
     
     // In production with PostgreSQL, run a simple schema sync
-    if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.includes('postgres')) {
+    if (process.env.DATABASE_URL?.includes('postgres')) {
       console.log('🔧 Ensuring database schema is up to date...');
       
       // Try to run a simple query to check if tables exist
@@ -30,19 +30,23 @@ async function setupDatabase() {
         await prisma.shop.findFirst();
         console.log('✅ Database schema looks good');
       } catch (error) {
-        if (error.code === 'P2021') {
-          console.log('📦 Running database schema setup...');
-          const { execSync } = require('child_process');
+        console.log('📦 Database tables not found, creating them...');
+        console.log('Error details:', error.message);
+        
+        const { execSync } = require('child_process');
+        
+        try {
+          // Run db push to create tables
+          console.log('Running: npx prisma db push --accept-data-loss');
+          execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+          console.log('✅ Database schema created successfully');
           
-          try {
-            // Run db push to create tables
-            execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-            console.log('✅ Database schema created successfully');
-          } catch (pushError) {
-            console.error('❌ Database schema setup failed:', pushError.message);
-          }
-        } else {
-          console.error('❌ Database schema check failed:', error.message);
+          // Test again
+          await prisma.shop.findFirst();
+          console.log('✅ Database schema verified');
+        } catch (pushError) {
+          console.error('❌ Database schema setup failed:', pushError.message);
+          console.log('You can manually trigger setup by calling POST /setup-database');
         }
       }
     }
@@ -163,6 +167,34 @@ app.use((req, res, next) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Database setup endpoint
+app.post('/setup-database', async (req, res) => {
+  try {
+    console.log('🔧 Manual database setup triggered...');
+    
+    const { execSync } = require('child_process');
+    
+    // Run db push to create tables
+    execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+    
+    // Test the connection
+    await prisma.shop.findFirst();
+    
+    res.json({ 
+      success: true, 
+      message: 'Database setup completed successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Manual database setup failed:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Routes
