@@ -141,6 +141,7 @@ class LiveShopifyService {
 
       let syncedCount = 0;
       let errorCount = 0;
+      const detailedErrors = []; // Track detailed errors for debugging
 
       for (const product of shopifyProducts) {
         console.log(`🔍 Processing product: ${product.title} (ID: ${product.id}, Status: ${product.status})`);
@@ -223,13 +224,15 @@ class LiveShopifyService {
           }
         } catch (error) {
           console.error(`❌ Error syncing product ${product.id} (${product.title}):`, error.message);
-          console.error(`❌ Error details:`, {
+          const errorDetails = {
             message: error.message,
             code: error.code,
             meta: error.meta,
             cause: error.cause,
-            prismaStack: error.stack
-          });
+            productId: product.id,
+            productTitle: product.title
+          };
+          console.error(`❌ Error details:`, errorDetails);
           console.error(`❌ Product data that failed:`, {
             shopId: shopRecord.id,
             shopifyProductId: product.id.toString(),
@@ -238,6 +241,7 @@ class LiveShopifyService {
             hasVariants: !!product.variants,
             variantCount: product.variants?.length || 0
           });
+          detailedErrors.push(errorDetails);
           errorCount++;
         }
       }
@@ -248,7 +252,8 @@ class LiveShopifyService {
         success: true,
         syncedCount,
         errorCount,
-        totalProducts: shopifyProducts.length
+        totalProducts: shopifyProducts.length,
+        errors: detailedErrors.slice(0, 3) // Include first 3 errors for debugging
       };
 
     } catch (error) {
