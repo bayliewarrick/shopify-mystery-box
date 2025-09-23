@@ -84,32 +84,38 @@ model BoxInstance {
 }
 
 model ProductCache {
-  id          Int      @id @default(autoincrement())
-  shopId      Int
+  id                Int      @id @default(autoincrement())
+  shopId            Int
   
   // Shopify product data
-  shopifyProductId String   // Shopify product ID
-  title       String
-  handle      String   @default("")
-  description String   @default("")
-  vendor      String   @default("")
-  productType String   @default("")
-  tags        String   @default("[]") // JSON string of tags
-  status      String   @default("active")
-  price       Float
-  compareAtPrice Float  @default(0)
-  inventoryQuantity Int @default(0)
+  shopifyProductId  String
+  title             String
+  handle            String
+  description       String?
+  vendor            String?
+  productType       String?
+  tags              String   // JSON array of tags
   
-  // JSON fields for complex data
-  variants    String   @default("[]") // JSON string of variants
-  images      String   @default("[]") // JSON string of images
+  // Pricing
+  price             Float
+  compareAtPrice    Float?
+  costPerItem       Float?
+  
+  // Inventory
+  inventory         Int      @default(0)
+  available         Boolean  @default(true)
+  
+  // Images
+  imageUrl          String?
   
   // Metadata
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive          Boolean  @default(true)
+  lastSynced        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   
   // Relations
-  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   
   @@unique([shopId, shopifyProductId])
   @@map("product_cache")
