@@ -163,16 +163,27 @@ router.post('/sync', async (req, res) => {
 
     console.log(`✅ Manual sync completed for ${shop}:`, syncResult);
 
-    res.json({
-      message: 'Products synced successfully',
-      ...syncResult
-    });
+    // Make sure we haven't already sent a response
+    if (!res.headersSent) {
+      res.json({
+        message: 'Products synced successfully',
+        ...syncResult
+      });
+    } else {
+      console.warn('⚠️ Response already sent, skipping duplicate response');
+    }
   } catch (error) {
     console.error('Error syncing products:', error);
-    res.status(500).json({ 
-      error: 'Failed to sync products',
-      details: error.message 
-    });
+    
+    // Only send error response if we haven't already sent one
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Failed to sync products',
+        details: error.message 
+      });
+    } else {
+      console.warn('⚠️ Error response not sent - headers already sent');
+    }
   }
 });
 
