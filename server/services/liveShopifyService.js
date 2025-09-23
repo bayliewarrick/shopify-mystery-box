@@ -239,7 +239,7 @@ class LiveShopifyService {
             shopId: shopRecord.id,
             shopifyProductId: product.id.toString(),
             title: product.title,
-            price: parseFloat(primaryVariant?.price || 0),
+            price: product.variants?.[0]?.price || 0,
             hasVariants: !!product.variants,
             variantCount: product.variants?.length || 0
           });
