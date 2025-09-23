@@ -144,67 +144,61 @@ class LiveShopifyService {
         console.log(`📝 Product has ${product.variants?.length || 0} variants`);
         
         try {
-          // Check if product has variants
+          // Skip products without variants
           if (!product.variants || product.variants.length === 0) {
             console.log(`⚠️ Skipping product ${product.title} - no variants`);
             continue;
           }
 
-          // Process each variant
-          for (const variant of product.variants) {
-            console.log(`   🔧 Processing variant: ${variant.title} (ID: ${variant.id})`);
-            
-            const productData = {
-              shopId: shopRecord.id,
-              shopifyProductId: product.id.toString(),
-              shopifyVariantId: variant.id.toString(),
-              title: product.title,
-              description: product.body_html || '',
-              vendor: product.vendor || '',
-              productType: product.product_type || '',
-              tags: JSON.stringify(product.tags ? product.tags.split(',').map(t => t.trim()) : []),
-              price: parseFloat(variant.price || 0),
-              compareAtPrice: variant.compare_at_price ? parseFloat(variant.compare_at_price) : null,
-              inventoryQuantity: variant.inventory_quantity || 0,
-              sku: variant.sku || '',
-              barcode: variant.barcode || '',
-              weight: variant.weight || 0,
-              weightUnit: variant.weight_unit || 'kg',
-              images: JSON.stringify(product.images?.map(img => ({
-                id: img.id,
-                src: img.src,
-                alt: img.alt
-              })) || []),
-              variants: JSON.stringify(product.variants?.map(v => ({
-                id: v.id,
-                title: v.title,
-                price: v.price,
-                compareAtPrice: v.compare_at_price,
-                inventoryQuantity: v.inventory_quantity,
-                sku: v.sku,
-                available: v.available
-              })) || []),
-              status: product.status || 'active',
-              available: variant.available !== false,
-              lastSynced: new Date()
-            };
+          // Get primary variant for price (usually the first one)
+          const primaryVariant = product.variants[0];
+          
+          // Calculate total inventory across all variants
+          const totalInventory = product.variants.reduce((total, v) => total + (v.inventory_quantity || 0), 0);
+          
+          const productData = {
+            shopId: shopRecord.id,
+            shopifyProductId: product.id.toString(),
+            title: product.title,
+            description: product.body_html || '',
+            vendor: product.vendor || '',
+            productType: product.product_type || '',
+            tags: JSON.stringify(product.tags ? product.tags.split(',').map(t => t.trim()) : []),
+            price: parseFloat(primaryVariant.price || 0),
+            compareAtPrice: primaryVariant.compare_at_price ? parseFloat(primaryVariant.compare_at_price) : 0,
+            inventoryQuantity: totalInventory,
+            images: JSON.stringify(product.images?.map(img => ({
+              id: img.id,
+              src: img.src,
+              alt: img.alt
+            })) || []),
+            variants: JSON.stringify(product.variants?.map(v => ({
+              id: v.id,
+              title: v.title,
+              price: v.price,
+              compareAtPrice: v.compare_at_price,
+              inventoryQuantity: v.inventory_quantity,
+              sku: v.sku,
+              available: v.available
+            })) || []),
+            status: product.status || 'active'
+          };
 
-            console.log(`   💾 Inserting/updating product data for variant ${variant.id}`);
-            
-            await prisma.productCache.upsert({
-              where: {
-                shopId_shopifyVariantId: {
-                  shopId: shopRecord.id,
-                  shopifyVariantId: variant.id.toString()
-                }
-              },
-              update: productData,
-              create: productData
-            });
+          console.log(`   💾 Saving product data for ${product.title}`);
+          
+          await prisma.productCache.upsert({
+            where: {
+              shopId_shopifyProductId: {
+                shopId: shopRecord.id,
+                shopifyProductId: product.id.toString()
+              }
+            },
+            update: productData,
+            create: productData
+          });
 
-            console.log(`   ✅ Successfully saved variant ${variant.id}`);
-            syncedCount++;
-          }
+          console.log(`   ✅ Successfully saved product ${product.id} (${product.title})`);
+          syncedCount++;
         } catch (error) {
           console.error(`❌ Error syncing product ${product.id} (${product.title}):`, error.message);
           console.error(`❌ Error details:`, error);
