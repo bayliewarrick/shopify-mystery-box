@@ -6,6 +6,30 @@ const demoShopifyService = require('../services/demoShopifyService');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Ensure demo shop exists
+async function ensureDemoShop(shopDomain) {
+  if (shopDomain === 'pack-peddlers-demo.myshopify.com') {
+    const existingShop = await prisma.shop.findUnique({
+      where: { shopDomain }
+    });
+    
+    if (!existingShop) {
+      console.log('Creating demo shop:', shopDomain);
+      await prisma.shop.create({
+        data: {
+          shopDomain,
+          accessToken: 'demo-token',
+          shopName: 'Pack Peddlers Demo Store',
+          email: 'demo@packpeddlers.com',
+          currency: 'USD',
+          timezone: 'America/New_York',
+          isActive: true
+        }
+      });
+    }
+  }
+}
+
 // Get cached products for a shop
 router.get('/products', async (req, res) => {
   try {
@@ -14,6 +38,9 @@ router.get('/products', async (req, res) => {
     if (!shop) {
       return res.status(400).json({ error: 'Shop parameter is required' });
     }
+
+    // Ensure demo shop exists
+    await ensureDemoShop(shop);
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     

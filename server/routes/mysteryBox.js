@@ -5,6 +5,30 @@ const mysteryBoxService = require('../services/mysteryBoxService');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Ensure demo shop exists
+async function ensureDemoShop(shopDomain) {
+  if (shopDomain === 'pack-peddlers-demo.myshopify.com') {
+    const existingShop = await prisma.shop.findUnique({
+      where: { shopDomain }
+    });
+    
+    if (!existingShop) {
+      console.log('Creating demo shop:', shopDomain);
+      await prisma.shop.create({
+        data: {
+          shopDomain,
+          accessToken: 'demo-token',
+          shopName: 'Pack Peddlers Demo Store',
+          email: 'demo@packpeddlers.com',
+          currency: 'USD',
+          timezone: 'America/New_York',
+          isActive: true
+        }
+      });
+    }
+  }
+}
+
 // Get all mystery boxes for a shop
 router.get('/', async (req, res) => {
   try {
@@ -13,6 +37,9 @@ router.get('/', async (req, res) => {
     if (!shop) {
       return res.status(400).json({ error: 'Shop parameter is required' });
     }
+
+    // Ensure demo shop exists
+    await ensureDemoShop(shop);
 
     const mysteryBoxes = await prisma.mysteryBox.findMany({
       where: { shop: { shopDomain: shop } },
@@ -47,6 +74,9 @@ router.get('/:id', async (req, res) => {
     if (!shop) {
       return res.status(400).json({ error: 'Shop parameter is required' });
     }
+
+    // Ensure demo shop exists
+    await ensureDemoShop(shop);
 
     const mysteryBox = await prisma.mysteryBox.findFirst({
       where: { 
@@ -99,6 +129,9 @@ router.post('/', async (req, res) => {
       console.log('❌ Missing shop parameter');
       return res.status(400).json({ error: 'Shop parameter is required' });
     }
+
+    // Ensure demo shop exists
+    await ensureDemoShop(shop);
 
     // Validate required fields
     if (!name || minValue === undefined || maxValue === undefined) {
@@ -316,6 +349,9 @@ router.post('/:id/generate', async (req, res) => {
     if (!shop) {
       return res.status(400).json({ error: 'Shop parameter is required' });
     }
+
+    // Ensure demo shop exists
+    await ensureDemoShop(shop);
 
     // Verify mystery box exists and belongs to shop
     const mysteryBox = await prisma.mysteryBox.findFirst({
