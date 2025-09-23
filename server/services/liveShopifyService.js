@@ -144,8 +144,8 @@ class LiveShopifyService {
       const detailedErrors = []; // Track detailed errors for debugging
 
       // DEBUG: Only process first 3 products to see detailed errors
-      const productsToProcess = shopifyProducts.slice(0, 3);
-      console.log(`🔍 DEBUG: Processing only first ${productsToProcess.length} products for debugging`);
+      const productsToProcess = shopifyProducts; // Process all products now that sync is working
+      console.log(`🔍 Processing all ${productsToProcess.length} products`);
 
       for (const product of productsToProcess) {
         console.log(`🔍 Processing product: ${product.title} (ID: ${product.id}, Status: ${product.status})`);
@@ -237,28 +237,8 @@ class LiveShopifyService {
             productTitle: product.title
           };
           console.error(`❌ Error details:`, errorDetails);
-          console.error(`❌ Product data that failed:`, {
-            shopId: shopRecord.id,
-            shopifyProductId: product.id.toString(),
-            title: product.title,
-            price: product.variants?.[0]?.price || 0,
-            hasVariants: !!product.variants,
-            variantCount: product.variants?.length || 0
-          });
           detailedErrors.push(errorDetails);
           errorCount++;
-          
-          // Return immediately after first error for debugging
-          console.log(`🛑 STOPPING after first error for debugging`);
-          return {
-            success: false,
-            syncedCount,
-            errorCount,
-            totalProducts: shopifyProducts.length,
-            processedProducts: 1,
-            firstError: errorDetails,
-            deploymentTimestamp
-          };
         }
       }
 
@@ -269,8 +249,7 @@ class LiveShopifyService {
         syncedCount,
         errorCount,
         totalProducts: shopifyProducts.length,
-        processedProducts: productsToProcess.length,
-        errors: detailedErrors // Include all errors for debugging
+        errors: errorCount > 0 ? detailedErrors.slice(0, 5) : [] // Include up to 5 errors for debugging
       };
 
     } catch (error) {
