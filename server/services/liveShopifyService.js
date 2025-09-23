@@ -150,14 +150,10 @@ class LiveShopifyService {
             continue;
           }
 
-          // Check if product has variants
-          if (!product.variants || product.variants.length === 0) {
-            console.log(`⚠️  Skipping product ${product.id} (${product.title}): No variants`);
-            continue;
-          }
-
+          console.log(`🎯 Getting primary variant for product ${product.id}`);
           // Get primary variant for price (usually the first one)
           const primaryVariant = product.variants[0];
+          console.log(`✅ Primary variant found for ${product.title}:`, primaryVariant ? 'Yes' : 'No');
           
           // Calculate total inventory across all variants
           const totalInventory = product.variants.reduce((total, v) => total + (v.inventory_quantity || 0), 0);
