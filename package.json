@@ -11,7 +11,7 @@
     "build": "npm run build:client && npm run db:setup",
     "build:client": "cd client && npm install --legacy-peer-deps && npm run build",
     "build:server": "npm run db:generate",
-    "postinstall": "cd client && npm install --legacy-peer-deps && cd .. && npm run db:setup",
+    "postinstall": "cd client && npm install --legacy-peer-deps && cd .. && npx prisma generate",
     "deploy": "npm run build && npm start",
     "db:setup": "node scripts/setup-production-db.js",
     "db:generate": "npx prisma generate",

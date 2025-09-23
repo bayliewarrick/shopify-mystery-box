@@ -15,18 +15,44 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
-// Test database connection
-async function testDatabaseConnection() {
+// Test database connection and setup schema
+async function setupDatabase() {
   try {
     await prisma.$connect();
     console.log('✅ Database connected successfully');
+    
+    // In production with PostgreSQL, run a simple schema sync
+    if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.includes('postgres')) {
+      console.log('🔧 Ensuring database schema is up to date...');
+      
+      // Try to run a simple query to check if tables exist
+      try {
+        await prisma.shop.findFirst();
+        console.log('✅ Database schema looks good');
+      } catch (error) {
+        if (error.code === 'P2021') {
+          console.log('📦 Running database schema setup...');
+          const { execSync } = require('child_process');
+          
+          try {
+            // Run db push to create tables
+            execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+            console.log('✅ Database schema created successfully');
+          } catch (pushError) {
+            console.error('❌ Database schema setup failed:', pushError.message);
+          }
+        } else {
+          console.error('❌ Database schema check failed:', error.message);
+        }
+      }
+    }
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
     console.error('DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
   }
 }
 
-testDatabaseConnection();
+setupDatabase();
 
 // Middleware
 app.use(helmet({

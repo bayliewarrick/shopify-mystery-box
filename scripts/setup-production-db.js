@@ -1,14 +1,28 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { generateSchema } = require('./configure-schema');
 
 async function setupProductionDatabase() {
-  console.log('🚀 Setting up production database...');
+  console.log('🚀 Setting up database...');
+  
+  // Configure schema based on environment
+  generateSchema();
   
   // Check if DATABASE_URL is set
   if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL environment variable is not set');
-    process.exit(1);
+    console.log('⚠️  DATABASE_URL not set - skipping database setup (this is normal during build)');
+    console.log('📦 Generating Prisma client...');
+    
+    try {
+      // Just generate the client during build
+      execSync('npx prisma generate', { stdio: 'inherit' });
+      console.log('✅ Prisma client generated successfully');
+      return;
+    } catch (error) {
+      console.error('❌ Failed to generate Prisma client:', error.message);
+      process.exit(1);
+    }
   }
   
   console.log('✅ DATABASE_URL is configured');
