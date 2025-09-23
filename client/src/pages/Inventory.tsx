@@ -5,13 +5,20 @@ import { useApi } from '../contexts/ApiContext';
 interface Product {
   id: number;
   title: string;
-  vendor: string;
-  productType: string;
+  handle: string;
+  description: string | null;
+  vendor: string | null;
+  productType: string | null;
   price: number;
-  compareAtPrice: number;
-  inventoryQuantity: number;
-  status: string;
+  compareAtPrice: number | null;
+  inventory: number;
+  available: boolean;
+  isActive: boolean;
+  imageUrl: string | null;
   tags: string[];
+  lastSynced: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function Inventory() {
@@ -128,13 +135,13 @@ export default function Inventory() {
 
   const tableRows = products.map((product) => [
     product.title,
-    product.vendor,
-    product.productType,
+    product.vendor || '—',
+    product.productType || '—',
     `$${product.price.toFixed(2)}`,
-    product.compareAtPrice > 0 ? `$${product.compareAtPrice.toFixed(2)}` : '—',
-    product.inventoryQuantity.toString(),
-    <Badge tone={product.status === 'active' ? 'success' : 'critical'} key={product.id}>
-      {product.status}
+    product.compareAtPrice ? `$${product.compareAtPrice.toFixed(2)}` : '—',
+    product.inventory.toString(),
+    <Badge tone={product.isActive ? 'success' : 'critical'} key={product.id}>
+      {product.isActive ? 'active' : 'inactive'}
     </Badge>,
     product.tags.slice(0, 3).join(', ') + (product.tags.length > 3 ? '...' : '')
   ]);
@@ -222,11 +229,11 @@ export default function Inventory() {
               </div>
               <div>
                 <Text variant="bodyMd" as="p" tone="subdued">Active Products</Text>
-                <Text variant="headingLg" as="p">{products.filter(p => p.status === 'active').length}</Text>
+                <Text variant="headingLg" as="p">{products.filter(p => p.isActive).length}</Text>
               </div>
               <div>
                 <Text variant="bodyMd" as="p" tone="subdued">Total Inventory</Text>
-                <Text variant="headingLg" as="p">{products.reduce((sum, p) => sum + p.inventoryQuantity, 0)}</Text>
+                <Text variant="headingLg" as="p">{products.reduce((sum, p) => sum + p.inventory, 0)}</Text>
               </div>
               <div>
                 <Text variant="bodyMd" as="p" tone="subdued">Avg Price</Text>

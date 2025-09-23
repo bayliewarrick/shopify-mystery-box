@@ -28,16 +28,27 @@ export interface BoxInstance {
 }
 
 export interface Product {
-  id: string;
-  productId: string;
+  id: number;
+  shopId: number;
+  shopifyProductId: string;
   title: string;
   handle: string;
+  description: string | null;
+  vendor: string | null;
+  productType: string | null;
   tags: string[];
   price: number;
-  compareAtPrice?: number;
+  compareAtPrice: number | null;
+  costPerItem: number | null;
   inventory: number;
   available: boolean;
+  imageUrl: string | null;
+  isActive: boolean;
   lastSynced: string;
+  createdAt: string;
+  updatedAt: string;
+  variants: any[];
+  images: any[];
 }
 
 export interface InventoryStats {
