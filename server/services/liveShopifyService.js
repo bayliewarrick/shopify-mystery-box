@@ -140,9 +140,20 @@ class LiveShopifyService {
       let errorCount = 0;
 
       for (const product of shopifyProducts) {
+        console.log(`🔍 Processing product: ${product.title} (ID: ${product.id}, Status: ${product.status})`);
+        console.log(`📝 Product has ${product.variants?.length || 0} variants`);
+        
         try {
+          // Check if product has variants
+          if (!product.variants || product.variants.length === 0) {
+            console.log(`⚠️ Skipping product ${product.title} - no variants`);
+            continue;
+          }
+
           // Process each variant
-          for (const variant of product.variants || []) {
+          for (const variant of product.variants) {
+            console.log(`   🔧 Processing variant: ${variant.title} (ID: ${variant.id})`);
+            
             const productData = {
               shopId: shopRecord.id,
               shopifyProductId: product.id.toString(),
@@ -178,6 +189,8 @@ class LiveShopifyService {
               lastSynced: new Date()
             };
 
+            console.log(`   💾 Inserting/updating product data for variant ${variant.id}`);
+            
             await prisma.productCache.upsert({
               where: {
                 shopId_shopifyVariantId: {
@@ -189,10 +202,12 @@ class LiveShopifyService {
               create: productData
             });
 
+            console.log(`   ✅ Successfully saved variant ${variant.id}`);
             syncedCount++;
           }
         } catch (error) {
-          console.error(`❌ Error syncing product ${product.id}:`, error.message);
+          console.error(`❌ Error syncing product ${product.id} (${product.title}):`, error.message);
+          console.error(`❌ Error details:`, error);
           errorCount++;
         }
       }
