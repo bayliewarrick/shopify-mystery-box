@@ -171,28 +171,18 @@ class LiveShopifyService {
             shopifyProductId: product.id.toString(),
             title: product.title || 'Untitled Product',
             handle: product.handle || product.title?.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') || 'product',
-            description: product.body_html || '',
-            vendor: product.vendor || '',
-            productType: product.product_type || '',
+            description: product.body_html || null,
+            vendor: product.vendor || null,
+            productType: product.product_type || null,
             tags: JSON.stringify(product.tags ? product.tags.split(',').map(t => t.trim()) : []),
             price: parseFloat(primaryVariant?.price || 0),
-            compareAtPrice: primaryVariant?.compare_at_price ? parseFloat(primaryVariant.compare_at_price) : 0,
-            inventoryQuantity: totalInventory,
-            images: JSON.stringify(product.images?.map(img => ({
-              id: img.id,
-              src: img.src,
-              alt: img.alt
-            })) || []),
-            variants: JSON.stringify(product.variants?.map(v => ({
-              id: v.id,
-              title: v.title,
-              price: v.price,
-              compareAtPrice: v.compare_at_price,
-              inventoryQuantity: v.inventory_quantity,
-              sku: v.sku,
-              available: v.available
-            })) || []),
-            status: product.status || 'active'
+            compareAtPrice: primaryVariant?.compare_at_price ? parseFloat(primaryVariant.compare_at_price) : null,
+            costPerItem: null, // Not available from Shopify API
+            inventory: totalInventory,
+            available: totalInventory > 0 && product.status === 'active',
+            imageUrl: product.images?.[0]?.src || null,
+            isActive: product.status === 'active',
+            lastSynced: new Date()
           };
 
           // Validate required fields

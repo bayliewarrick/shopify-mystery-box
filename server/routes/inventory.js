@@ -163,6 +163,11 @@ router.post('/sync', async (req, res) => {
 
     console.log(`✅ Manual sync completed for ${shop}:`, syncResult);
 
+    // Add detailed error logging
+    if (syncResult.errorCount > 0) {
+      console.log(`⚠️ Sync had ${syncResult.errorCount} errors - details should be in logs above`);
+    }
+
     // Make sure we haven't already sent a response
     if (!res.headersSent) {
       res.json({
