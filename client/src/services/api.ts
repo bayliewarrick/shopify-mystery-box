@@ -94,9 +94,25 @@ export class ApiService {
   }
 
   private getShopDomain(): string {
-    // In a real Shopify app, this would come from the URL or app context
-    // For demo purposes, we'll use our demo shop domain
-    return new URLSearchParams(window.location.search).get('shop') || 'pack-peddlers-demo.myshopify.com';
+    // Get shop from URL parameter first
+    const urlShop = new URLSearchParams(window.location.search).get('shop');
+    
+    if (urlShop) {
+      console.log('🔗 Using shop from URL parameter:', urlShop);
+      // Save to localStorage for future use
+      localStorage.setItem('shopDomain', urlShop);
+      return urlShop;
+    }
+    
+    // Fallback to localStorage, then demo shop
+    const storedShop = localStorage.getItem('shopDomain');
+    const finalShop = storedShop || 'pack-peddlers-demo.myshopify.com';
+    
+    console.log('🏪 Using shop domain:', finalShop);
+    console.log('📱 localStorage shop:', storedShop);
+    console.log('🌐 Current URL:', window.location.href);
+    
+    return finalShop;
   }
 
   // Mystery Box endpoints

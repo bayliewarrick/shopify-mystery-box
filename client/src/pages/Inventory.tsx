@@ -21,6 +21,18 @@ export default function Inventory() {
   const [syncing, setSyncing] = useState(false);
   const [liveSyncing, setLiveSyncing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; content: string } | null>(null);
+  const [currentShop, setCurrentShop] = useState<string>('');
+
+  // Get current shop domain for display
+  const getCurrentShop = () => {
+    const urlShop = new URLSearchParams(window.location.search).get('shop');
+    const storedShop = localStorage.getItem('shopDomain');
+    return urlShop || storedShop || 'pack-peddlers-demo.myshopify.com';
+  };
+
+  useEffect(() => {
+    setCurrentShop(getCurrentShop());
+  }, []);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -124,7 +136,8 @@ export default function Inventory() {
 
   return (
     <Page 
-      title="Inventory Management"
+      title={`Inventory Management - ${currentShop}`}
+      subtitle={`Connected to: ${currentShop}`}
       primaryAction={{
         content: syncing ? 'Syncing Demo...' : 'Sync Demo Data',
         onAction: handleSync,

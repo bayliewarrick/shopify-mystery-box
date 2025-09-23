@@ -41,6 +41,24 @@ export default function Dashboard() {
   }, [api]);
 
   useEffect(() => {
+    // Handle OAuth redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const shop = urlParams.get('shop');
+    const installed = urlParams.get('installed');
+    
+    if (shop && installed === 'true') {
+      console.log('🎉 OAuth completed for shop:', shop);
+      // Save shop to localStorage
+      localStorage.setItem('shopDomain', shop);
+      console.log('💾 Saved shop to localStorage:', shop);
+      
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Show success message or redirect to inventory
+      console.log('✅ Shop setup complete! Ready to sync products.');
+    }
+    
     loadStats();
   }, [loadStats]);
 
