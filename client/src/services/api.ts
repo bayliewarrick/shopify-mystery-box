@@ -67,14 +67,18 @@ export class ApiService {
       baseURL,
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Shop-Domain': this.getShopDomain(),
       },
     });
 
-    // Request interceptor for debugging
+    // Request interceptor for debugging and dynamic headers
     this.client.interceptors.request.use(
       (config) => {
+        // Set shop domain dynamically on each request
+        const currentShop = this.getShopDomain();
+        config.headers['X-Shopify-Shop-Domain'] = currentShop;
+        
         console.log('API Request:', config.method?.toUpperCase(), config.url);
+        console.log('🏪 Request shop domain:', currentShop);
         return config;
       },
       (error) => {
@@ -181,7 +185,15 @@ export class ApiService {
 
   async syncFromLiveStore(): Promise<{ success: boolean; message: string; syncedCount: number }> {
     const shop = this.getShopDomain();
-    const response = await this.client.post(`/inventory/sync?shop=${shop}`, {});
+    console.log('🔄 syncFromLiveStore called');
+    console.log('🏪 Shop from getShopDomain():', shop);
+    console.log('📱 Current localStorage:', localStorage.getItem('shopDomain'));
+    console.log('🌐 Current URL params:', new URLSearchParams(window.location.search).get('shop'));
+    
+    const fullUrl = `/inventory/sync?shop=${shop}`;
+    console.log('📡 Full sync URL:', fullUrl);
+    
+    const response = await this.client.post(fullUrl, {});
     return response.data;
   }
 
