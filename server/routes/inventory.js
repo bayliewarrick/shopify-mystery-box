@@ -1,6 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const shopifyService = require('../services/shopifyService');
+const LiveShopifyService = require('../services/liveShopifyService');
 const demoShopifyService = require('../services/demoShopifyService');
 
 const router = express.Router();
@@ -154,8 +155,13 @@ router.post('/sync', async (req, res) => {
       return res.status(404).json({ error: 'Shop not found' });
     }
 
-    // Sync products from Shopify
-    const syncResult = await shopifyService.syncProducts(shop, shopData.accessToken);
+    console.log(`🔄 Starting manual sync for shop: ${shop}`);
+    
+    // Use LiveShopifyService for live stores
+    const liveService = new LiveShopifyService(shop, shopData.accessToken);
+    const syncResult = await liveService.syncProducts();
+
+    console.log(`✅ Manual sync completed for ${shop}:`, syncResult);
 
     res.json({
       message: 'Products synced successfully',
@@ -163,7 +169,10 @@ router.post('/sync', async (req, res) => {
     });
   } catch (error) {
     console.error('Error syncing products:', error);
-    res.status(500).json({ error: 'Failed to sync products' });
+    res.status(500).json({ 
+      error: 'Failed to sync products',
+      details: error.message 
+    });
   }
 });
 

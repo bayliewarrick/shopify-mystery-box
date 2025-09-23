@@ -165,7 +165,7 @@ export class ApiService {
 
   async syncFromLiveStore(): Promise<{ success: boolean; message: string; syncedCount: number }> {
     const shop = this.getShopDomain();
-    const response = await this.client.post(`/auth/sync?shop=${shop}`);
+    const response = await this.client.post(`/inventory/sync?shop=${shop}`);
     return response.data;
   }
 
