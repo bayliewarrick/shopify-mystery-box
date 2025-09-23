@@ -166,7 +166,12 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    dbUrl: process.env.DATABASE_URL ? 'Set' : 'Not set',
+    nodeEnv: process.env.NODE_ENV || 'undefined'
+  });
 });
 
 // Database setup endpoint
