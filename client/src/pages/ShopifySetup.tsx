@@ -10,10 +10,22 @@ export default function ShopifySetup() {
 
     setLoading(true);
     
-    // Clean shop domain
+    // Clean shop domain - remove protocol, www, and extract just the shop name
     let cleanShop = shop.trim().toLowerCase();
-    if (!cleanShop.endsWith('.myshopify.com')) {
-      cleanShop = cleanShop.replace(/\.(com|net|org)$/, '') + '.myshopify.com';
+    
+    // Remove protocol if present
+    cleanShop = cleanShop.replace(/^https?:\/\//, '');
+    
+    // Remove www if present
+    cleanShop = cleanShop.replace(/^www\./, '');
+    
+    // If it already ends with .myshopify.com, keep as is
+    if (cleanShop.endsWith('.myshopify.com')) {
+      // Remove any path after the domain
+      cleanShop = cleanShop.split('/')[0];
+    } else {
+      // Extract just the shop name and add .myshopify.com
+      cleanShop = cleanShop.split('.')[0] + '.myshopify.com';
     }
 
     // Use current domain for API calls
@@ -53,8 +65,8 @@ export default function ShopifySetup() {
                 label="Store Domain"
                 value={shop}
                 onChange={setShop}
-                placeholder="your-store.myshopify.com"
-                helpText="Enter your store's .myshopify.com domain"
+                placeholder="pack-peddlers-test-store or pack-peddlers-test-store.myshopify.com"
+                helpText="Enter your store name or full .myshopify.com domain (URLs will be cleaned automatically)"
                 autoComplete="off"
               />
 
