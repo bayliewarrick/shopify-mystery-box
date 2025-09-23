@@ -113,13 +113,13 @@ class LiveShopifyService {
         where: { shopDomain: this.shop },
         update: { 
           accessToken: this.accessToken,
-          lastSync: new Date()
+          isActive: true
         },
         create: {
           shopDomain: this.shop,
           shopName: this.shop,
           accessToken: this.accessToken,
-          lastSync: new Date()
+          isActive: true
         }
       });
 
