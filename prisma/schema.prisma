@@ -90,6 +90,7 @@ model ProductCache {
   // Shopify product data
   shopifyProductId String   // Shopify product ID
   title       String
+  handle      String
   description String   @default("")
   vendor      String   @default("")
   productType String   @default("")

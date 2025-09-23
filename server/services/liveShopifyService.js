@@ -170,6 +170,7 @@ class LiveShopifyService {
             shopId: shopRecord.id,
             shopifyProductId: product.id.toString(),
             title: product.title || 'Untitled Product',
+            handle: product.handle || product.title?.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') || 'product',
             description: product.body_html || '',
             vendor: product.vendor || '',
             productType: product.product_type || '',
