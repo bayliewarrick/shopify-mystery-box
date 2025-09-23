@@ -127,17 +127,16 @@ export class ApiService {
         return urlShop;
       }
 
-      // Check localStorage for quick fallback
-      const storedShop = localStorage.getItem('shopDomain');
-      if (storedShop && storedShop !== 'pack-peddlers-demo.myshopify.com') {
-        console.log('📱 Using shop from localStorage:', storedShop);
-        return storedShop;
-      }
-
-      // Fetch from server
+      // Always try server first (authoritative source)
       console.log('🌐 Fetching current shop from server...');
-      const response = await fetch(this.client.defaults.baseURL + '/auth/current-shop');
+      const serverUrl = this.client.defaults.baseURL + '/auth/current-shop';
+      console.log('🔗 Server URL:', serverUrl);
+      
+      const response = await fetch(serverUrl);
+      console.log('📡 Server response status:', response.status);
+      
       const data = await response.json();
+      console.log('📊 Server response data:', data);
 
       if (data.authenticated && data.shop) {
         console.log('✅ Got authenticated shop from server:', data.shop);
@@ -146,12 +145,19 @@ export class ApiService {
         return data.shop;
       }
 
+      // Fallback to localStorage only if server has no authenticated shop
+      const storedShop = localStorage.getItem('shopDomain');
+      if (storedShop && storedShop !== 'pack-peddlers-demo.myshopify.com') {
+        console.log('📱 Using shop from localStorage as fallback:', storedShop);
+        return storedShop;
+      }
+
       console.log('⚠️ No authenticated shop found, using demo shop');
       return 'pack-peddlers-demo.myshopify.com';
 
     } catch (error) {
       console.error('❌ Error fetching current shop:', error);
-      // Fallback to localStorage or demo
+      // Final fallback to localStorage or demo
       const fallback = localStorage.getItem('shopDomain') || 'pack-peddlers-demo.myshopify.com';
       console.log('🔄 Using fallback shop:', fallback);
       return fallback;
@@ -162,6 +168,8 @@ export class ApiService {
   async refreshShopDomain(): Promise<string> {
     this.currentShop = null;
     this.shopPromise = null;
+    // Clear localStorage to force server fetch
+    localStorage.removeItem('shopDomain');
     return this.getShopDomain();
   }
 

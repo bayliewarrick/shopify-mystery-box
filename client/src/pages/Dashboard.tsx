@@ -48,9 +48,14 @@ export default function Dashboard() {
     
     if (shop && installed === 'true') {
       console.log('🎉 OAuth completed for shop:', shop);
-      // Save shop to localStorage
+      
+      // Clear any existing shop data first
+      console.log('🧹 Clearing existing shop data...');
+      localStorage.removeItem('shopDomain');
+      
+      // Save new shop to localStorage
       localStorage.setItem('shopDomain', shop);
-      console.log('💾 Saved shop to localStorage:', shop);
+      console.log('💾 Saved new shop to localStorage:', shop);
       
       // Refresh the API's shop domain cache
       api.refreshShopDomain().then(refreshedShop => {

@@ -42,6 +42,10 @@ export default function ShopifySetup() {
     console.log('🌐 Using API base URL:', apiBaseUrl);
     console.log('🎯 Full redirect URL:', `${apiBaseUrl}/api/auth/install?shop=${cleanShop}`);
 
+    // Clear any existing shop data before OAuth
+    console.log('🧹 Clearing existing shop data from localStorage...');
+    localStorage.removeItem('shopDomain');
+
     // Redirect to OAuth installation
     window.location.href = `${apiBaseUrl}/api/auth/install?shop=${cleanShop}`;
   };
