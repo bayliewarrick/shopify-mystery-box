@@ -1,0 +1,123 @@
+// Production Prisma schema for PostgreSQL
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Shop {
+  id          Int      @id @default(autoincrement())
+  shopDomain  String   @unique
+  accessToken String
+  shopName    String?
+  email       String?
+  currency    String?
+  timezone    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  mysteryBoxes MysteryBox[]
+  products     ProductCache[]
+  
+  @@map("shops")
+}
+
+model MysteryBox {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  
+  // Value parameters
+  minValue    Float
+  maxValue    Float
+  
+  // Item quantity settings
+  minItems    Int      @default(1)
+  maxItems    Int
+  
+  // Product filtering
+  includeTags String // JSON string of tags to include
+  excludeTags String // JSON string of tags to exclude
+  includeProductTypes String // JSON string of product types to include
+  excludeProductTypes String // JSON string of product types to exclude
+  
+  // Status and settings
+  isActive    Boolean  @default(true)
+  isAutomatic Boolean  @default(false)
+  
+  // Relationships
+  shopId      Int
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  instances   BoxInstance[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("mystery_boxes")
+}
+
+model BoxInstance {
+  id              Int      @id @default(autoincrement())
+  mysteryBoxId    Int
+  mysteryBox      MysteryBox @relation(fields: [mysteryBoxId], references: [id], onDelete: Cascade)
+  
+  // Generated values
+  totalValue      Float
+  itemCount       Int
+  selectedProducts String  // JSON string of selected products
+  
+  // Status
+  status          String   @default("DRAFT") // DRAFT, GENERATED, PUBLISHED, SOLD
+  generatedAt     DateTime @default(now())
+  publishedAt     DateTime?
+  soldAt          DateTime?
+  
+  // Shopify integration
+  shopifyProductId String?
+  shopifyVariantId String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("box_instances")
+}
+
+model ProductCache {
+  id                Int      @id @default(autoincrement())
+  shopId            Int
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  // Shopify product data
+  shopifyProductId  String
+  title             String
+  handle            String
+  description       String?
+  vendor            String?
+  productType       String?
+  tags              String   // JSON array of tags
+  
+  // Pricing
+  price             Float
+  compareAtPrice    Float?
+  costPerItem       Float?
+  
+  // Inventory
+  inventory         Int      @default(0)
+  available         Boolean  @default(true)
+  
+  // Images
+  imageUrl          String?
+  
+  // Metadata
+  isActive          Boolean  @default(true)
+  lastSynced        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([shopId, shopifyProductId])
+  @@map("product_cache")
+}
