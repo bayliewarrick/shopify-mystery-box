@@ -143,7 +143,11 @@ class LiveShopifyService {
       let errorCount = 0;
       const detailedErrors = []; // Track detailed errors for debugging
 
-      for (const product of shopifyProducts) {
+      // DEBUG: Only process first 3 products to see detailed errors
+      const productsToProcess = shopifyProducts.slice(0, 3);
+      console.log(`🔍 DEBUG: Processing only first ${productsToProcess.length} products for debugging`);
+
+      for (const product of productsToProcess) {
         console.log(`🔍 Processing product: ${product.title} (ID: ${product.id}, Status: ${product.status})`);
         console.log(`📝 Product has ${product.variants?.length || 0} variants`);
         
@@ -253,7 +257,8 @@ class LiveShopifyService {
         syncedCount,
         errorCount,
         totalProducts: shopifyProducts.length,
-        errors: detailedErrors.slice(0, 3) // Include first 3 errors for debugging
+        processedProducts: productsToProcess.length,
+        errors: detailedErrors // Include all errors for debugging
       };
 
     } catch (error) {
