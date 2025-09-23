@@ -9,6 +9,14 @@ const prisma = new PrismaClient();
 // Live Shopify OAuth installation route
 router.get('/install', async (req, res) => {
   try {
+    // Check if Shopify credentials are configured
+    if (!process.env.SHOPIFY_API_KEY || !process.env.SHOPIFY_API_SECRET || !process.env.HOST) {
+      return res.status(400).json({ 
+        error: 'Shopify app credentials not configured',
+        message: 'Please set SHOPIFY_API_KEY, SHOPIFY_API_SECRET, and HOST environment variables'
+      });
+    }
+
     const { shop } = req.query;
     
     if (!shop) {

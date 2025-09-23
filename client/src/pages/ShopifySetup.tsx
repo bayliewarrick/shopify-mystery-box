@@ -16,8 +16,13 @@ export default function ShopifySetup() {
       cleanShop = cleanShop.replace(/\.(com|net|org)$/, '') + '.myshopify.com';
     }
 
+    // Use current domain for API calls
+    const apiBaseUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin 
+      : 'http://localhost:3000';
+
     // Redirect to OAuth installation
-    window.location.href = `http://localhost:3000/api/auth/install?shop=${cleanShop}`;
+    window.location.href = `${apiBaseUrl}/api/auth/install?shop=${cleanShop}`;
   };
 
   return (

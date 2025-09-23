@@ -15,7 +15,7 @@ class LiveShopifyService {
   // Static method to create OAuth URL for app installation
   static getInstallUrl(shop) {
     const apiKey = process.env.SHOPIFY_API_KEY;
-    const redirectUri = `${process.env.HOST}/auth/callback`;
+    const redirectUri = `${process.env.HOST}/api/auth/callback`;
     const scopes = 'read_products,write_products,read_inventory,write_inventory,read_orders,write_orders';
     const state = crypto.randomBytes(16).toString('hex');
 
