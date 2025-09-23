@@ -57,15 +57,13 @@ router.get('/callback', async (req, res) => {
       where: { shopDomain: shop },
       update: { 
         accessToken,
-        isActive: true,
-        lastLogin: new Date()
+        isActive: true
       },
       create: {
         shopDomain: shop,
         shopName: shop,
         accessToken,
-        isActive: true,
-        lastLogin: new Date()
+        isActive: true
       }
     });
 
