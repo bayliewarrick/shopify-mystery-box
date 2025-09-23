@@ -52,6 +52,11 @@ export default function Dashboard() {
       localStorage.setItem('shopDomain', shop);
       console.log('💾 Saved shop to localStorage:', shop);
       
+      // Refresh the API's shop domain cache
+      api.refreshShopDomain().then(refreshedShop => {
+        console.log('🔄 Refreshed API shop domain:', refreshedShop);
+      });
+      
       // Clean up URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
       
@@ -60,7 +65,7 @@ export default function Dashboard() {
     }
     
     loadStats();
-  }, [loadStats]);
+  }, [loadStats, api]);
 
   const toggleMobileNavigationActive = () =>
     setMobileNavigationActive((mobileNavigationActive) => !mobileNavigationActive);

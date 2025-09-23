@@ -302,4 +302,30 @@ router.delete('/disconnect', async (req, res) => {
   }
 });
 
+// Get current authenticated shop
+router.get('/current-shop', async (req, res) => {
+  try {
+    // In a real app, this would get the shop from session/JWT
+    // For now, we'll return the most recently active shop
+    const recentShop = await prisma.shop.findFirst({
+      where: { isActive: true },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    if (!recentShop) {
+      return res.json({ shop: null, authenticated: false });
+    }
+
+    res.json({ 
+      shop: recentShop.shopDomain,
+      shopName: recentShop.shopName,
+      authenticated: true,
+      lastUpdated: recentShop.updatedAt
+    });
+  } catch (error) {
+    console.error('Error getting current shop:', error);
+    res.status(500).json({ error: 'Failed to get current shop' });
+  }
+});
+
 module.exports = router;

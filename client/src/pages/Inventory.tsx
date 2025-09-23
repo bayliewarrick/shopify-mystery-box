@@ -23,16 +23,18 @@ export default function Inventory() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; content: string } | null>(null);
   const [currentShop, setCurrentShop] = useState<string>('');
 
-  // Get current shop domain for display
-  const getCurrentShop = () => {
-    const urlShop = new URLSearchParams(window.location.search).get('shop');
-    const storedShop = localStorage.getItem('shopDomain');
-    return urlShop || storedShop || 'pack-peddlers-demo.myshopify.com';
-  };
-
   useEffect(() => {
-    setCurrentShop(getCurrentShop());
-  }, []);
+    const updateShop = async () => {
+      try {
+        const shop = await api.getCurrentShop();
+        setCurrentShop(shop);
+      } catch (error) {
+        console.error('Error getting current shop:', error);
+        setCurrentShop('pack-peddlers-demo.myshopify.com');
+      }
+    };
+    updateShop();
+  }, [api]);
 
   const handleSync = async () => {
     setSyncing(true);

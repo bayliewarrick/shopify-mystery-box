@@ -50,6 +50,8 @@ export interface InventoryStats {
 
 export class ApiService {
   private client: AxiosInstance;
+  private currentShop: string | null = null;
+  private shopPromise: Promise<string> | null = null;
 
   constructor(baseURL?: string) {
     // Automatically detect API base URL
@@ -72,9 +74,9 @@ export class ApiService {
 
     // Request interceptor for debugging and dynamic headers
     this.client.interceptors.request.use(
-      (config) => {
-        // Set shop domain dynamically on each request
-        const currentShop = this.getShopDomain();
+      async (config) => {
+        // Get shop domain for this request
+        const currentShop = await this.getShopDomain();
         config.headers['X-Shopify-Shop-Domain'] = currentShop;
         
         console.log('API Request:', config.method?.toUpperCase(), config.url);
@@ -97,43 +99,92 @@ export class ApiService {
     );
   }
 
-  private getShopDomain(): string {
-    // Get shop from URL parameter first
-    const urlShop = new URLSearchParams(window.location.search).get('shop');
-    
-    if (urlShop) {
-      console.log('🔗 Using shop from URL parameter:', urlShop);
-      // Save to localStorage for future use
-      localStorage.setItem('shopDomain', urlShop);
-      return urlShop;
+  private async getShopDomain(): Promise<string> {
+    // If we already have a shop cached, return it
+    if (this.currentShop) {
+      return this.currentShop;
     }
-    
-    // Fallback to localStorage, then demo shop
-    const storedShop = localStorage.getItem('shopDomain');
-    const finalShop = storedShop || 'pack-peddlers-demo.myshopify.com';
-    
-    console.log('🏪 Using shop domain:', finalShop);
-    console.log('📱 localStorage shop:', storedShop);
-    console.log('🌐 Current URL:', window.location.href);
-    
-    return finalShop;
+
+    // If there's already a request in progress, wait for it
+    if (this.shopPromise) {
+      return this.shopPromise;
+    }
+
+    // Start a new request to get the current shop
+    this.shopPromise = this.fetchCurrentShop();
+    this.currentShop = await this.shopPromise;
+    this.shopPromise = null;
+
+    return this.currentShop;
+  }
+
+  private async fetchCurrentShop(): Promise<string> {
+    try {
+      // First check URL parameter (for OAuth redirects)
+      const urlShop = new URLSearchParams(window.location.search).get('shop');
+      if (urlShop) {
+        console.log('🔗 Using shop from URL parameter:', urlShop);
+        return urlShop;
+      }
+
+      // Check localStorage for quick fallback
+      const storedShop = localStorage.getItem('shopDomain');
+      if (storedShop && storedShop !== 'pack-peddlers-demo.myshopify.com') {
+        console.log('📱 Using shop from localStorage:', storedShop);
+        return storedShop;
+      }
+
+      // Fetch from server
+      console.log('🌐 Fetching current shop from server...');
+      const response = await fetch(this.client.defaults.baseURL + '/auth/current-shop');
+      const data = await response.json();
+
+      if (data.authenticated && data.shop) {
+        console.log('✅ Got authenticated shop from server:', data.shop);
+        // Cache it in localStorage for faster subsequent loads
+        localStorage.setItem('shopDomain', data.shop);
+        return data.shop;
+      }
+
+      console.log('⚠️ No authenticated shop found, using demo shop');
+      return 'pack-peddlers-demo.myshopify.com';
+
+    } catch (error) {
+      console.error('❌ Error fetching current shop:', error);
+      // Fallback to localStorage or demo
+      const fallback = localStorage.getItem('shopDomain') || 'pack-peddlers-demo.myshopify.com';
+      console.log('🔄 Using fallback shop:', fallback);
+      return fallback;
+    }
+  }
+
+  // Public method to refresh shop domain (useful after OAuth)
+  async refreshShopDomain(): Promise<string> {
+    this.currentShop = null;
+    this.shopPromise = null;
+    return this.getShopDomain();
+  }
+
+  // Public method to get current shop (for UI display)
+  async getCurrentShop(): Promise<string> {
+    return this.getShopDomain();
   }
 
   // Mystery Box endpoints
   async getMysteryBoxes(): Promise<MysteryBox[]> {
-    const shop = this.getShopDomain();
+    const shop = await this.getShopDomain();
     const response: AxiosResponse<{ mysteryBoxes: MysteryBox[] }> = await this.client.get(`/mystery-boxes?shop=${shop}`);
     return response.data.mysteryBoxes;
   }
 
   async getMysteryBox(id: string): Promise<MysteryBox> {
-    const shop = this.getShopDomain();
+    const shop = await this.getShopDomain();
     const response: AxiosResponse<{ mysteryBox: MysteryBox }> = await this.client.get(`/mystery-boxes/${id}?shop=${shop}`);
     return response.data.mysteryBox;
   }
 
   async createMysteryBox(data: Partial<MysteryBox>): Promise<MysteryBox> {
-    const shopDomain = this.getShopDomain();
+    const shopDomain = await this.getShopDomain();
     console.log('Creating mystery box with shop:', shopDomain);
     console.log('Data being sent:', data);
     
@@ -154,7 +205,7 @@ export class ApiService {
   }
 
   async generateBoxInstance(mysteryBoxId: string): Promise<BoxInstance> {
-    const shop = this.getShopDomain();
+    const shop = await this.getShopDomain();
     const response: AxiosResponse<{ instance: BoxInstance }> = await this.client.post(`/mystery-boxes/${mysteryBoxId}/generate?shop=${shop}`);
     return response.data.instance;
   }
@@ -184,7 +235,7 @@ export class ApiService {
   }
 
   async syncFromLiveStore(): Promise<{ success: boolean; message: string; syncedCount: number }> {
-    const shop = this.getShopDomain();
+    const shop = await this.getShopDomain();
     console.log('🔄 syncFromLiveStore called');
     console.log('🏪 Shop from getShopDomain():', shop);
     console.log('📱 Current localStorage:', localStorage.getItem('shopDomain'));
