@@ -27,7 +27,8 @@ export default function Inventory() {
     setMessage(null);
     
     try {
-      const response = await fetch('http://localhost:3000/api/inventory/sync-demo', {
+      const apiBaseUrl = window.location.origin;
+      const response = await fetch(`${apiBaseUrl}/api/inventory/sync-demo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +85,8 @@ export default function Inventory() {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/inventory/products?shop=pack-peddlers-demo.myshopify.com&limit=50');
+      const apiBaseUrl = window.location.origin;
+      const response = await fetch(`${apiBaseUrl}/api/inventory/products?shop=pack-peddlers-demo.myshopify.com&limit=50`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

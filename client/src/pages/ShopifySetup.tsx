@@ -104,8 +104,8 @@ export default function ShopifySetup() {
               <List>
                 <List.Item>Visit <a href="https://partners.shopify.com" target="_blank" rel="noopener noreferrer">Shopify Partners</a></List.Item>
                 <List.Item>Create a new app</List.Item>
-                <List.Item>Set App URL to your deployed domain</List.Item>
-                <List.Item>Set Redirection URL to: https://your-domain.com/auth/callback</List.Item>
+                <List.Item>Set App URL to: https://shopify-mystery-box-production.up.railway.app</List.Item>
+                <List.Item>Set Redirection URL to: https://shopify-mystery-box-production.up.railway.app/api/auth/callback</List.Item>
               </List>
             </div>
 
@@ -116,7 +116,7 @@ export default function ShopifySetup() {
               <List>
                 <List.Item>SHOPIFY_API_KEY=your_api_key</List.Item>
                 <List.Item>SHOPIFY_API_SECRET=your_api_secret</List.Item>
-                <List.Item>HOST=https://your-deployed-domain.com</List.Item>
+                <List.Item>HOST=https://shopify-mystery-box-production.up.railway.app</List.Item>
               </List>
             </div>
 
