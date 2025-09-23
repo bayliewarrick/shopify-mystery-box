@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Page, Card, Text, DataTable, Spinner, Banner, Badge, EmptyState } from '@shopify/polaris';
 import { useApi } from '../contexts/ApiContext';
 
@@ -96,11 +96,14 @@ export default function Inventory() {
     }
   };
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     setLoading(true);
     try {
+      const currentShopDomain = await api.getCurrentShop();
       const apiBaseUrl = window.location.origin;
-      const response = await fetch(`${apiBaseUrl}/api/inventory/products?shop=pack-peddlers-demo.myshopify.com&limit=50`);
+      const response = await fetch(`${apiBaseUrl}/api/inventory/products?shop=${currentShopDomain}&limit=50`);
+      
+      console.log('📦 Loading products for shop:', currentShopDomain);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -117,11 +120,11 @@ export default function Inventory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [loadProducts]); 
 
   const tableRows = products.map((product) => [
     product.title,
