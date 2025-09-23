@@ -114,6 +114,9 @@ class LiveShopifyService {
 
   // Sync products to local database
   async syncProducts() {
+    const uniqueId = Date.now();
+    console.log(`🚀 Starting syncProducts() - Deployment ID: ${uniqueId}`);
+    
     try {
       console.log(`🔄 Starting product sync for shop: ${this.shop}`);
       
@@ -171,8 +174,8 @@ class LiveShopifyService {
             vendor: product.vendor || '',
             productType: product.product_type || '',
             tags: JSON.stringify(product.tags ? product.tags.split(',').map(t => t.trim()) : []),
-            price: parseFloat(primaryVariant.price || 0),
-            compareAtPrice: primaryVariant.compare_at_price ? parseFloat(primaryVariant.compare_at_price) : 0,
+            price: parseFloat(primaryVariant?.price || 0),
+            compareAtPrice: primaryVariant?.compare_at_price ? parseFloat(primaryVariant.compare_at_price) : 0,
             inventoryQuantity: totalInventory,
             images: JSON.stringify(product.images?.map(img => ({
               id: img.id,
